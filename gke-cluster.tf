@@ -1,11 +1,18 @@
-variable "gke_num_nodes" {
-  default     = 2
-  description = "number of gke nodes"
+
+# Only to show knowledge in locals
+locals {
+  cluster_name  = "${var.project_id}-${var.environment}-gke"
+  nod_pool_name = "pool-${var.project_id}-${var.environment}"
+  node_count    = var.node_count
+  machine_type  = "e2-medium"
+  disk_size_gb  = 20
+  disk_type     = "pd-balanced"
+  tags          = ["gke-node", "${var.project_id}-${var.environment}-gke"]
 }
 
 # GKE cluster
 resource "google_container_cluster" "primary" {
-  name     = "${var.project_id}-gke"
+  name     = local.cluster_name
   location = var.zone
 
   # Will use Separately Managed Node Pool
@@ -13,7 +20,8 @@ resource "google_container_cluster" "primary" {
   initial_node_count       = 1
 
   node_config {
-    disk_size_gb = 20
+    disk_size_gb = local.disk_size_gb
+    disk_type    = local.disk_type
   }
 
   network    = google_compute_network.vpc.name
@@ -22,10 +30,11 @@ resource "google_container_cluster" "primary" {
 
 # Separately Managed Node Pool
 resource "google_container_node_pool" "primary_nodes" {
-  name       = google_container_cluster.primary.name
+  name       = local.nod_pool_name
   location   = var.zone
   cluster    = google_container_cluster.primary.name
-  node_count = var.gke_num_nodes
+  node_count = local.node_count
+  #  node_count = vars.node_count -> Can be simplified like this as well
 
   node_config {
     oauth_scopes = [
@@ -37,9 +46,10 @@ resource "google_container_node_pool" "primary_nodes" {
       env = var.project_id
     }
 
-    machine_type = "e2-medium"
-    disk_size_gb = 20
-    tags         = ["gke-node", "${var.project_id}-gke"]
+    machine_type = local.machine_type
+    disk_size_gb = local.disk_size_gb
+    disk_type    = local.disk_type
+    tags         = local.tags
     metadata = {
       disable-legacy-endpoints = "true"
     }

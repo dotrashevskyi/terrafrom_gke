@@ -1,21 +1,3 @@
-variable "project_id" {
-  description = "project id"
-}
-
-variable "region" {
-  description = "region"
-}
-
-variable "zone" {
-  description = "zone"
-}
-
-provider "google" {
-  project = var.project_id
-  region  = var.region
-  zone    = var.zone
-}
-
 # VPC
 resource "google_compute_network" "vpc" {
   name                    = "${var.project_id}-vpc"
@@ -24,8 +6,16 @@ resource "google_compute_network" "vpc" {
 
 # Subnet
 resource "google_compute_subnetwork" "subnet" {
-  name                     = "${var.project_id}-subnet"
-  region                   = var.region
-  network                  = google_compute_network.vpc.name
-  ip_cidr_range            = "10.10.0.0/24"
+  name          = "${var.project_id}-subnet"
+  region        = var.region
+  network       = google_compute_network.vpc.name
+  ip_cidr_range = "10.10.0.0/22" # 1022 addresses
+  secondary_ip_range {
+    ip_cidr_range = "10.10.4.0/23" # 510 addresses -> 440 pods max for 4 nodes
+    range_name    = "pods-addresses-range"
+  }
+  secondary_ip_range {
+    ip_cidr_range = "10.10.6.0/25" # 126 addresses -> 100 services for example
+    range_name    = "services-addresses-range"
+  }
 }
