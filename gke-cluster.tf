@@ -3,7 +3,6 @@
 locals {
   cluster_name  = "${var.project_id}-${var.environment}-gke"
   nod_pool_name = "pool-${var.project_id}-${var.environment}"
-  node_count    = var.node_count
   machine_type  = "e2-medium"
   disk_size_gb  = 20
   disk_type     = "pd-balanced"
@@ -33,8 +32,7 @@ resource "google_container_node_pool" "primary_nodes" {
   name       = local.nod_pool_name
   location   = var.zone
   cluster    = google_container_cluster.primary.name
-  node_count = local.node_count
-  #  node_count = vars.node_count -> Can be simplified like this as well
+  node_count = var.node_count
 
   node_config {
     oauth_scopes = [
